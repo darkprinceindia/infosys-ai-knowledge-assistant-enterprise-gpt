@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101827">
+  <title>Enterprise GPT · Knowledge Assistant</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <div id="login" class="login-screen hidden">
+    <div class="login-card">
+      <div class="brand-mark">✦</div>
+      <p class="eyebrow">INFOSYS CAPSTONE DEMO</p>
+      <h1>Knowledge, ready when you are.</h1>
+      <p class="muted">Sign in to explore an enterprise assistant grounded in approved documents.</p>
+      <form id="login-form">
+        <label for="login-email">Demo account</label>
+        <select id="login-email" required>
+          <option value="admin@demo.local">Administrator · all collections</option>
+          <option value="delivery@demo.local">Delivery employee</option>
+          <option value="hr@demo.local">HR employee</option>
+          <option value="engineering@demo.local">Engineering employee</option>
+          <option value="sales@demo.local">Sales employee</option>
+        </select>
+        <label for="login-password">Password</label>
+        <input id="login-password" type="password" autocomplete="current-password" placeholder="Demo password" required>
+        <p class="hint">Local demo default: <code>Demo123!</code>. Change <code>DEMO_PASSWORD</code> before sharing.</p>
+        <button class="primary wide" type="submit">Enter workspace <span>↗</span></button>
+      </form>
+      <p id="login-error" class="error hidden"></p>
+    </div>
+  </div>
+
+  <div id="app" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="logo"><div class="brand-mark small">✦</div><div><strong>Enterprise GPT</strong><span>KNOWLEDGE ASSISTANT</span></div></div>
+      <div class="sidebar-label">WORKSPACE</div>
+      <nav id="nav">
+        <button data-page="ask" class="nav-item active"><span class="nav-icon">⌕</span> Ask assistant</button>
+        <button data-page="knowledge" class="nav-item"><span class="nav-icon">▤</span> Knowledge library</button>
+        <button data-page="connectors" class="nav-item"><span class="nav-icon">⇄</span> Connectors</button>
+        <button data-page="analytics" class="nav-item admin-only"><span class="nav-icon">▥</span> Quality analytics</button>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="security-note"><span>◈</span><div><strong>Permission-aware</strong><small>Answers use only sources you can access.</small></div></div>
+        <button id="user-button" class="user-button"><span id="avatar">A</span><span><strong id="user-name"></strong><small id="user-dept"></small></span><span class="logout-symbol">↪</span></button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar"><div><span class="online-dot"></span> CURATED KNOWLEDGE SPACE</div><div id="top-role" class="role-badge"></div></header>
+
+      <section id="page-ask" class="page active">
+        <div class="page-wrap ask-wrap">
+          <div class="hero"><p class="eyebrow">YOUR ENTERPRISE KNOWLEDGE, CONNECTED</p><h1>What would you like<br>to <em>know?</em></h1><p>Ask across approved guides, policies, SOPs, and runbooks. Every answer points back to its source.</p></div>
+          <div class="query-card">
+            <form id="query-form">
+              <label class="sr-only" for="question">Your question</label>
+              <textarea id="question" rows="3" placeholder="Ask a question about an approved process or policy..." required></textarea>
+              <div class="query-actions"><div class="select-wrap"><span>Collection</span><select id="department-filter"><option>All</option><option>General</option><option>Delivery</option><option>HR</option><option>Sales</option><option>Engineering</option></select></div><button class="primary" type="submit" id="ask-button">Ask assistant <span>→</span></button></div>
+            </form>
+          </div>
+          <div class="suggestions"><p>TRY A QUESTION</p><div id="suggestion-list"></div></div>
+          <div id="answer-card" class="answer-card hidden"><div class="answer-head"><div><span class="answer-spark">✦</span><span>GROUNDED ANSWER</span></div><span id="answer-route" class="route-pill"></span></div><div id="answer-text" class="answer-text"></div><div class="answer-meta"><span id="answer-confidence"></span><span id="answer-latency"></span></div><div id="source-list" class="source-list"></div><div class="feedback-row"><span>Was this useful?</span><div id="feedback-buttons"><button data-rating="5">👍 Yes</button><button data-rating="1">👎 Needs work</button></div><span id="feedback-saved" class="success hidden">Feedback saved</span></div></div>
+          <p id="query-error" class="error hidden"></p>
+        </div>
+      </section>
+
+      <section id="page-knowledge" class="page"><div class="page-wrap"><div class="section-header"><div><p class="eyebrow">SOURCE OF TRUTH</p><h1>Knowledge library</h1><p>Approved content, with ownership and access scope visible.</p></div><button id="show-upload" class="primary admin-only">+ Add document</button></div><div id="document-grid" class="document-grid"></div><div id="upload-panel" class="panel hidden admin-only"><div class="panel-title"><h2>Add an approved document</h2><button id="close-upload" class="icon-button" aria-label="Close upload">×</button></div><p class="muted">TXT, Markdown, DOCX, or PDF · up to 5 MB · required metadata is indexed with every passage.</p><form id="upload-form"><div class="form-grid"><label>Title<input name="title" required></label><label>File<input name="file" type="file" accept=".txt,.md,.docx,.pdf" required></label><label>Department<select name="department"><option>General</option><option>Delivery</option><option>HR</option><option>Sales</option><option>Engineering</option></select></label><label>Access classification<select name="classification"><option>Internal</option><option>HR</option><option>Sales</option><option>Engineering</option><option>Restricted</option></select></label><label>Source owner<input name="owner" required></label><label>Document type<input name="document_type" value="Guide" required></label><label>Effective date<input name="effective_date" type="date"></label><label>Expiry date<input name="expiry_date" type="date"></label></div><button class="primary" type="submit">Validate and index <span>→</span></button><span id="upload-message"></span></form></div></div></section>
+
+      <section id="page-connectors" class="page"><div class="page-wrap"><div class="section-header"><div><p class="eyebrow">CONTROLLED TOOL ROUTING</p><h1>Connectors</h1><p>Query routing is visible and every connector result passes the access filter.</p></div></div><div id="connector-grid"></div><div class="info-panel"><h2>How routing works</h2><div class="flow"><span>Question classification</span><b>→</b><span>MCP tool or local index</span><b>→</b><span>Permission filter</span><b>→</b><span>Cited answer</span></div><p>HR policy queries demonstrate a real read-only MCP stdio tool call. Other queries use the local hybrid index. Connector calls, latency, and failures are logged for administrator review.</p></div></div></section>
+
+      <section id="page-analytics" class="page admin-only"><div class="page-wrap"><div class="section-header"><div><p class="eyebrow">QUALITY OPERATIONS</p><h1>Knowledge health</h1><p>See usage, source coverage, and areas needing review.</p></div><button id="refresh-analytics" class="secondary">Refresh ↻</button></div><div id="metric-grid" class="metric-grid"></div><div class="analytics-columns"><div class="panel"><h2>Documents by collection</h2><div id="department-bars"></div></div><div class="panel"><h2>Retrieval routes</h2><div id="route-bars"></div></div></div><div class="panel"><h2>Recent questions</h2><div id="recent-queries"></div></div><div class="panel"><h2>Connector events</h2><div id="connector-events"></div></div></div></section>
+    </main>
+  </div>
+  <dialog id="source-dialog"><div class="dialog-head"><div><p class="eyebrow">APPROVED SOURCE</p><h2 id="dialog-title"></h2></div><button id="close-dialog" class="icon-button" aria-label="Close preview">×</button></div><div id="dialog-meta" class="dialog-meta"></div><pre id="dialog-content"></pre></dialog>
+</body>
+</html>

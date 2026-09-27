@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: infosys-enterprise-gpt-demo
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: python app.py
+    healthCheckPath: /
+    envVars:
+      - key: HOST
+        value: 0.0.0.0
+      - key: APP_SECRET
+        generateValue: true
+      - key: DEMO_PASSWORD
+        sync: false

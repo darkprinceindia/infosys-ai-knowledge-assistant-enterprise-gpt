@@ -1,0 +1,17 @@
+{
+  "document_metadata": {
+    "required": ["title", "department", "classification", "owner", "document_type", "filename", "content"],
+    "department_enum": ["General", "Delivery", "HR", "Sales", "Engineering"],
+    "classification_enum": ["Internal", "HR", "Sales", "Engineering", "Restricted"],
+    "optional": ["effective_date", "expiry_date", "source_system"],
+    "status_enum": ["active", "archived"]
+  },
+  "chunk_record": {
+    "fields": ["id", "document_id", "section", "position", "text", "vector"],
+    "citation_anchor": ["document_id", "section", "position"]
+  },
+  "answer_response": {
+    "fields": ["id", "answer", "citations", "route", "department", "confidence", "no_answer", "latency_ms"],
+    "citation_fields": ["number", "document_id", "title", "section", "snippet", "effective_date", "owner", "classification", "score"]
+  }
+}
