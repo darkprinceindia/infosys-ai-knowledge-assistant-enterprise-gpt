@@ -1,0 +1,301 @@
+INFOSYS ENTERPRISE GPT - PRESENTATION SPEAKING GUIDE
+AI Knowledge Assistant capstone prototype
+
+Suggested length: 10-12 minutes, followed by a 3-5 minute live demo.
+This guide matches the 15-slide capstone presentation. Speak naturally rather
+than reading every sentence word for word.
+
+IMPORTANT CONTEXT TO STATE AT THE START
+This is a capstone prototype with fictional sample documents. The screens were
+captured from the locally running application. It is not an official Infosys
+system, a public deployment, or an approved place for real internal documents.
+
+ONE-SENTENCE SUMMARY
+Enterprise GPT is a permission-aware knowledge assistant: an employee asks a
+question, the application finds relevant approved passages, and it gives a
+source-linked answer only when it has enough permitted evidence.
+
+==========================================================================
+1. OPENING: THE PROBLEM AND OBJECTIVE (SLIDES 1-2)
+==========================================================================
+
+Suggested words:
+"In a large organization, useful information is spread across policy files,
+standard operating procedures, project guides, and technical runbooks. People
+often spend time looking for the correct document and then checking whether it
+is current. A normal chatbot may sound convincing without showing where an
+answer came from. Our objective was to build a simpler, controlled path from a
+question to an answer that the employee can verify."
+
+"The product searches approved documents, shows the source passage, and applies
+the employee's access scope before answering. If there is not enough evidence,
+it says so instead of guessing."
+
+What makes the project different:
+- The answer has numbered citations that open the original document.
+- Access to HR, Sales, Engineering, and restricted content depends on role.
+- Administrators can add documents and review usage and connector activity.
+- The system can run without a paid AI key by extracting cited sentences.
+
+==========================================================================
+2. WHAT THE PRODUCT DOES AND WHO USES IT (SLIDE 3)
+==========================================================================
+
+Suggested words:
+"Employees use the Ask assistant page. They enter a natural-language question
+and can inspect a citation before relying on the answer. Administrators manage
+the Knowledge library and inspect Quality analytics. The demonstration includes
+an administrator and employee accounts for departments such as Delivery and HR."
+
+Main screens:
+1. Ask assistant: question box, collection filter, suggested questions,
+   answer, citations, and feedback.
+2. Knowledge library: permitted documents, owner and classification, source
+   preview, and the administrator's upload form.
+3. Connectors: explains the routing path and shows the configured MCP tool.
+4. Quality analytics: administrator view of questions, routes, citation
+   coverage, no-answer outcomes, and connector events.
+
+==========================================================================
+3. THE COMPLETE SYSTEM IN ONE PICTURE (SLIDE 4)
+==========================================================================
+
+Use this simple flow while pointing to the architecture diagram:
+
+Browser UI
+   -> Python HTTP API (app.py)
+      -> query classifier and route decision
+         -> HR: read-only MCP search tool (mcp_server.py)
+         -> other questions: local search (knowledge.py)
+            -> SQLite documents and search index (data/app.db)
+      -> access and freshness checks
+      -> cited answer or explicit no-answer
+   -> browser displays the result and source links
+
+Suggested words:
+"The browser never reads the database directly. JavaScript sends an HTTP request
+to our Python API. The API authenticates the user and decides where to search.
+The search reads indexed document passages from SQLite. The API filters those
+passages by access and document status, builds an answer, records the event, and
+sends JSON back to the browser. The browser renders that JSON as the answer and
+source cards."
+
+If someone asks what 'backend' means, say: "It is the server-side Python code
+that handles login, search, permission checks, answer construction, and storage.
+The frontend is the HTML, CSS, and JavaScript that users see and click."
+
+==========================================================================
+4. HOW DOCUMENTS ENTER THE SYSTEM (SLIDE 5)
+==========================================================================
+
+Suggested words:
+"First, an administrator provides an approved TXT, Markdown, DOCX, or PDF file.
+The form also asks for a title, department, access classification, source owner,
+document type, and effective and expiry dates. The backend checks the file size,
+type, readable content, and duplicate content. Then it extracts text, divides it
+into sections and overlapping passages, and indexes those passages."
+
+Why each step matters:
+- Validation keeps unsupported, oversized, empty, or duplicate files out.
+- Section chunks help the assistant cite the relevant part of a document.
+- Metadata lets the app filter by department, classification, and freshness.
+- The index makes passages searchable when an employee asks a question.
+- An audit record shows that indexing happened.
+
+Current demo limit: uploads are at most 5 MB. PDF text extraction uses pypdf;
+TXT, Markdown, and DOCX handling otherwise relies mainly on Python's standard
+library. The five seeded documents are fictional examples.
+
+==========================================================================
+5. HOW A QUESTION BECOMES AN ANSWER (SLIDES 6-7)
+==========================================================================
+
+Suggested words:
+"A signed-in employee asks a question. The backend classifies its department
+using simple topic words, unless the user selected a collection. HR questions
+demonstrate a read-only MCP connector. Other questions search the local index.
+After retrieval, the app checks that the user can access each source and that
+the document is active and not expired."
+
+"The search score combines three local signals: term overlap, a hashed lexical
+vector comparison, and SQLite FTS5 full-text rank. These are ways to rank text
+matches. The local vector is NOT a semantic model embedding, and the displayed
+retrieval signal is NOT a probability that the answer is correct."
+
+"When the evidence is strong enough, the app chooses up to three passages. If a
+Gemini API key is configured on the server, Gemini can write a concise answer
+from those permitted passages. Without that key, the app extracts relevant
+source sentences and adds citations. If the passages are too weak, it returns
+an explicit no-answer message. The result, route, citations, timing, and audit
+event are saved for review."
+
+Access example to explain on slide 7:
+"The administrator can get a cited answer from the fictional HR leave policy.
+A Delivery employee asking the same HR question receives insufficient evidence
+with no HR passage or citation. This shows why authorization belongs inside
+retrieval and after connector output, not only in the page design."
+
+What MCP means here:
+MCP is a structured tool interface. This prototype starts a local Python
+server over standard input/output using JSON-RPC. Its read-only
+'search_curated_knowledge' tool handles the HR demonstration. This is not a
+live connection to a company HR system. The Python API checks the tool's
+returned passages again before using them.
+
+==========================================================================
+6. TECHNOLOGY: WHICH PART USES WHAT, AND WHY (SLIDES 8-9)
+==========================================================================
+
+Frontend - static/index.html, static/style.css, static/app.js
+  Technology: HTML, CSS, and browser JavaScript.
+  Work: forms, navigation, role-specific screens, calling API endpoints,
+  showing answers, source cards, dialogs, feedback, and analytics.
+  Why: a small interface that runs without a frontend build step.
+
+Application backend - app.py
+  Technology: Python standard-library ThreadingHTTPServer and JSON endpoints.
+  Work: login, signed session cookies, request validation, query routing, MCP
+  call orchestration, answer construction, and API responses.
+  Why: keeps the capstone easy to run and makes the full data flow visible.
+
+Knowledge and retrieval - knowledge.py
+  Technology: Python plus SQLite and FTS5 full-text search.
+  Work: document extraction, chunking, indexing, permission checks, ranking,
+  source preview, feedback storage, and analytics calculations.
+  Why: one local store supports the demonstration without a separate search
+  service. For a much larger production corpus, this design needs replacement.
+
+Connector - mcp_server.py
+  Technology: MCP-style JSON-RPC over local standard input/output.
+  Work: a read-only HR knowledge search tool.
+  Why: demonstrates a controlled tool boundary and visible routing.
+
+Optional answer model - Gemini API, called only by the backend
+  Work: turns retrieved permitted passages into a short cited response.
+  Why: improves wording when configured. Extractive synthesis keeps the core
+  workflow functional without an API key. The browser does not receive the key.
+
+Storage - data/app.db
+  Technology: SQLite tables and an FTS5 index.
+  Stores: users, document metadata and text, chunks, search features, queries,
+  citations, feedback, connector calls, and audit events.
+
+Examples of frontend/backend links:
+- Login form -> POST /api/login -> session cookie.
+- Ask form -> POST /api/query -> answer plus citation JSON.
+- Citation click -> GET /api/documents/{id} -> permitted source preview.
+- Upload form -> POST /api/documents/upload -> validation and indexing.
+- Analytics page -> GET /api/analytics -> administrator metrics.
+
+The code excerpt on slide 9 shows the HR routing decision and the extra
+permission check after the MCP tool returns a result.
+
+==========================================================================
+7. LIVE PRODUCT WALKTHROUGH (SLIDES 10-13)
+==========================================================================
+
+Suggested sequence:
+1. Sign in as Administrator using the demo credentials documented in README.
+2. Ask: "What is the annual leave request process?"
+3. Point out the MCP route, answer, and citation [1].
+4. Open citation [1]. Show the source title, section, owner, classification,
+   effective date, and original text. Explain that these allow verification.
+5. Open Knowledge library. Show the five fictional sample documents, then
+   open the Add document form. Explain the file and metadata fields. You do
+   not need to upload a real company document during the demo.
+6. Open Connectors and Quality analytics. Explain the route and what the
+   logged metrics measure. Demo metrics are activity signals, not proof of
+   answer accuracy.
+7. Sign out and sign in as Delivery employee. Ask the same HR question again.
+   Show the fresh no-answer result with no HR citation.
+
+IMPORTANT DEMO PREPARATION: In the current UI, a prior answer may remain
+visible after switching accounts until the next query or a page reload. Reload
+after changing accounts for a clean screen, then ask the new question. Explain
+this as a known client-state issue that should be fixed; do not present the
+reload as a security control. The backend checks a fresh query's permissions.
+
+Two other visible refinements:
+- The insufficient-evidence result still has a 'Grounded answer' heading.
+- One sample source has a metadata owner that differs from the owner named
+  inside its document text. Source owners should reconcile that information.
+
+==========================================================================
+8. ENTERPRISE VALUE AND HONEST BOUNDARIES (SLIDES 12-14)
+==========================================================================
+
+Suggested words:
+"The enterprise value is a repeatable way to find a policy or runbook passage,
+understand where an answer came from, and keep department content within its
+intended scope. A policy question, an incident runbook question, or a delivery
+SOP question can all follow the same controlled workflow. Administrators can
+see unanswered questions and improve the document collection over time."
+
+"This is still a capstone prototype. Its seeded data is fictional. The UI and
+local backend demonstrate the concept, but real company use would need SSO and
+managed roles, secure storage, document scanning, stronger citation and
+prompt-injection testing, privacy review, and approved infrastructure. A Render
+deployment blueprint exists, but a public app URL is not recorded in this
+project."
+
+Testing statement:
+"Seven workflow tests passed in this workspace. They cover the MCP path,
+citations, access restrictions, no-answer behavior, extraction, duplicates,
+and analytics. Six representative questions are in the local evaluation set.
+These checks support the prototype; they do not establish accuracy on real
+enterprise content."
+
+==========================================================================
+9. CLOSING (SLIDES 14-15)
+==========================================================================
+
+Suggested words:
+"We built the complete path from approved document intake to a cited answer:
+the browser interface, Python API, SQLite-backed retrieval, an MCP tool route,
+permission checks, and analytics. The next phase would fix the small UI issues
+we found, measure answer quality on a larger approved corpus, and add the
+identity and data controls needed for production. Thank you. I can now show
+the workflow live or answer questions about any component."
+
+Add the actual project maker names and responsibilities on slide 15.
+
+==========================================================================
+10. QUICK ANSWERS TO LIKELY QUESTIONS
+==========================================================================
+
+Q: Did you train a new model on company documents?
+A: No. This is retrieval-based question answering. It searches approved
+   passages and uses them as evidence. Gemini is optional for wording.
+
+Q: Is the search a semantic vector database?
+A: No. The current prototype combines term overlap, local hashed lexical
+   vectors, and SQLite FTS5. Production-scale semantic retrieval would require
+   evaluated model embeddings and an appropriate store.
+
+Q: What happens if there is no reliable source?
+A: The assistant returns a no-answer message and no source citation.
+
+Q: Can one department see another department's restricted documents?
+A: On a fresh request, the backend filters retrieval and source previews by
+   role and department. A known UI issue can retain an old displayed answer
+   after account switching, so that client state must be cleared before the
+   product can claim a complete role-switch boundary.
+
+Q: Why use MCP?
+A: It gives a structured, read-only tool boundary for a curated knowledge
+   search. HR questions demonstrate that route; other questions use the local
+   index. The API still validates returned passages.
+
+Q: Does the system need Gemini to work?
+A: No. Without the API key it makes a source-grounded extractive answer.
+
+Q: Are the shown metrics performance or accuracy benchmarks?
+A: No. They summarize local demo activity. Citation coverage and a retrieval
+   score do not prove that an answer is correct.
+
+Q: Is it deployed and ready for real Infosys documents?
+A: The reviewed application runs locally. A Render blueprint is prepared,
+   but no public URL is recorded. Real company content needs the production
+   controls and approvals described above.
+
+END OF SPEAKING GUIDE
