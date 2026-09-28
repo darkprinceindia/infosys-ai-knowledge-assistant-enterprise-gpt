@@ -1,8 +1,60 @@
 # Infosys AI Knowledge Assistant (Enterprise GPT)
 
-A working capstone application for governed document question answering. Employees ask natural-language questions and receive answers with source citations. Administrators can upload approved documents, inspect connector activity, and review quality signals.
+A capstone prototype for governed document question answering. Employees ask natural-language questions and receive answers with source citations. Administrators can upload approved documents, inspect connector activity, and review quality signals. The interface uses Infosys-inspired styling for the demonstration and is not an official Infosys product.
 
 > **Demo data:** The included documents are fictional examples created for this project. They are not Infosys policies or internal records.
+
+![Assistant home screen with the Infosys-inspired interface](assets/screenshots/01_assistant_home.png)
+
+## Product preview
+
+| Cited answer | Source preview |
+| :---: | :---: |
+| ![HR question answered with a source citation](assets/screenshots/02_cited_hr_answer.png) | ![Preview of a cited passage](assets/screenshots/03_source_preview.png) |
+
+| Document ingestion | Quality analytics |
+| :---: | :---: |
+| ![Administrator document upload](assets/screenshots/05_document_ingestion.png) | ![Quality analytics dashboard](assets/screenshots/07_quality_analytics.png) |
+
+The [employee access screenshot](assets/screenshots/10_employee_access_boundary.png) shows how a Delivery account is kept outside HR-only material. The [presentation](deliverables/Infosys_Enterprise_GPT_Capstone_Presentation_v3.pptx) and [speaking guide](deliverables/Infosys_Enterprise_GPT_Presentation_Speaking_Guide.txt) provide a guided walkthrough.
+
+## How the parts connect
+
+```mermaid
+flowchart TB
+    User["Employee or administrator"] --> UI["Browser interface<br/>HTML, CSS, JavaScript"]
+    UI --> API["Python HTTP API<br/>sessions and access checks"]
+    API -->|"Ask a question"| Router["Classify question and choose route"]
+    Router -->|"HR curated route"| MCP["Read-only MCP tool<br/>stdio JSON-RPC"]
+    Router -->|"Other routes"| Search["Permission-aware retrieval"]
+    MCP --> Search
+    Search <--> Store["SQLite metadata, FTS5 index,<br/>hashed lexical vectors"]
+    Search --> Answer["Cited answer or no-answer decision"]
+    Answer -->|"Key configured"| Gemini["Gemini synthesis"]
+    Answer -->|"Fallback"| Extract["Local extractive synthesis"]
+    Gemini --> API
+    Extract --> API
+    API -->|"Administrator upload"| Intake["Validate, extract, chunk, index"]
+    Intake --> Store
+    API --> Signals["Audit, feedback, and quality records"]
+```
+
+The MCP tool is a bundled local connector. Gemini receives only retrieved passages that passed the access filter. The local hashed vectors are lexical features, not semantic embeddings. See the [architecture notes](docs/architecture.md).
+
+### Question-to-answer pipeline
+
+```mermaid
+flowchart LR
+    Q["Question"] --> R["Classify and route"]
+    R --> K["Retrieve candidate passages"]
+    K --> P["Apply access and freshness checks"]
+    P --> E{"Enough evidence?"}
+    E -->|"No"| N["Explain that no supported answer was found"]
+    E -->|"Yes"| C["Select up to three cited passages"]
+    C --> M{"Gemini answer with valid citations?"}
+    M -->|"Yes"| G["Return model-backed answer"]
+    M -->|"No or unavailable"| L["Return extractive answer"]
+```
 
 ## Run locally
 
@@ -11,11 +63,11 @@ Requires Python 3.11 or newer. No frontend build step is needed.
 ```powershell
 cd G:\AlmaBetter\infosys-ai-knowledge-assistant-enterprise-gpt
 python -m venv .venv
-.venv\Scripts\python.exe -m pip install -r requirements.txt
-.venv\Scripts\python.exe app.py
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe app.py
 ```
 
-Open **http://127.0.0.1:8000**. The local demo password is `Demo123!` unless `DEMO_PASSWORD` is set. The login screen offers administrator and employee accounts for Delivery, HR, Engineering, and Sales. Change the password before sharing a deployment.
+Open **http://127.0.0.1:8000**. On later runs, only the `cd` and final `app.py` commands are needed. The local demo password is `Demo123!` unless `DEMO_PASSWORD` is set. The login screen offers administrator and employee accounts for Delivery, HR, Engineering, and Sales. Change the password before sharing a deployment.
 
 For macOS/Linux, activate the virtual environment and run `python app.py` with the same environment variables. `pypdf` is only required for PDF uploads; TXT, Markdown, and DOCX work with the standard library.
 
@@ -38,6 +90,17 @@ See [docs/demo_script.md](docs/demo_script.md) for a recording script and narrat
 - No-answer behavior, source preview, feedback capture, role-based screens, audit events, and quality analytics.
 - Five fictional sample documents covering delivery, HR, engineering, sales, and project onboarding.
 
+## Technology by component
+
+| Part | Technology | Purpose |
+| --- | --- | --- |
+| Frontend | HTML, CSS, JavaScript in `static/` | Login, questions, citations, library, analytics. |
+| Backend | Python standard-library HTTP server in `app.py` | Sessions, API routes, query workflow, access checks. |
+| Knowledge layer | `knowledge.py` and SQLite FTS5 | Intake, metadata, lexical retrieval, citations, quality records. |
+| Connector | `mcp_server.py` over stdio JSON-RPC | Read-only curated-knowledge route for HR questions. |
+| Optional LLM | Gemini API | Synthesize an answer from approved retrieved passages. |
+| PDF intake | `pypdf` | Extract text from uploaded PDFs. |
+
 ## Configuration
 
 Copy `.env.example` to `.env` and set values before a shared deployment. `.env` is ignored by Git.
@@ -47,11 +110,13 @@ Copy `.env.example` to `.env` and set values before a shared deployment. `.env` 
 | `APP_SECRET` | HMAC signing key for 12-hour session cookies. Required for a public bind. |
 | `DEMO_PASSWORD` | Password for seeded demo accounts. Required for a public bind. |
 | `GEMINI_API_KEY` | Optional model-backed synthesis; never sent to the browser. |
-| `GEMINI_MODEL` | Gemini model name, default `gemini-2.5-flash`. |
+| `GEMINI_MODEL` | Gemini model name, default `gemini-flash-latest`. |
 | `APP_DB` | SQLite database path, default `data/app.db`. |
 | `HOST`, `PORT` | Listening address and port; default `127.0.0.1:8000`. |
 
 The model request sends only passages that passed the permission filter. Avoid putting sensitive real company documents into a demo deployment without an approved identity provider, data retention policy, and security review.
+
+[`render.yaml`](render.yaml) defines a Render Free web service. Render generates `APP_SECRET`; set `DEMO_PASSWORD` and, if wanted, `GEMINI_API_KEY` as secret environment variables in Render. The local `.env` file is not transferred. Render Free uses an ephemeral filesystem: sample documents reseed after a restart, but uploads, feedback, and analytics history do not persist. See the [deployment guide](docs/deployment.md).
 
 ## Project layout
 
@@ -68,14 +133,14 @@ docs/                  architecture, APIs, demo, evaluation, deployment notes
 ## Test
 
 ```powershell
-.venv\Scripts\python.exe -m unittest discover -s tests -v
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
 The tests use a temporary database and verify the MCP answer route, citations, restricted-source behavior, no-answer handling, seeded content, duplicate detection, and analytics.
 
 ## Submission status
 
-The local codebase and demo flow are ready. A public GitHub URL, public app URL, and Google Drive recording require the corresponding destination accounts and publication steps. The application is a **capstone prototype**, with production gaps documented in [docs/security_notes.md](docs/security_notes.md). The brief's suggested stacks are options rather than mandatory choices; this implementation uses Python's standard library and a small optional PDF package to remain easy to run.
+The local codebase and demo flow are ready. Add a public app URL and recording after deployment. The application is a **capstone prototype**, with production gaps documented in [docs/security_notes.md](docs/security_notes.md). The brief's suggested stacks are options rather than mandatory choices; this implementation uses Python's standard library and a small optional PDF package to remain easy to run.
 
 ## Team contribution
 
