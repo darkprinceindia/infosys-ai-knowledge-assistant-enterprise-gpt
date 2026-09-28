@@ -7,3 +7,4 @@ data/uploads/
 *.log
 .ppt_build/
 .codex-finalizer/
+.codex-ppt-build/

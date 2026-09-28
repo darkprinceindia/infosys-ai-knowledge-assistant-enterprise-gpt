@@ -2,7 +2,7 @@ INFOSYS ENTERPRISE GPT - PRESENTATION SPEAKING GUIDE
 AI Knowledge Assistant capstone prototype
 
 Suggested length: 10-12 minutes, followed by a 3-5 minute live demo.
-This guide matches the 15-slide capstone presentation. Speak naturally rather
+This guide matches the 16-slide capstone presentation. Speak naturally rather
 than reading every sentence word for word.
 
 IMPORTANT CONTEXT TO STATE AT THE START
@@ -193,7 +193,7 @@ The code excerpt on slide 9 shows the HR routing decision and the extra
 permission check after the MCP tool returns a result.
 
 ==========================================================================
-7. LIVE PRODUCT WALKTHROUGH (SLIDES 10-13)
+7. LIVE PRODUCT WALKTHROUGH (SLIDES 10-13 AND 15)
 ==========================================================================
 
 Suggested sequence:
@@ -248,7 +248,7 @@ These checks support the prototype; they do not establish accuracy on real
 enterprise content."
 
 ==========================================================================
-9. CLOSING (SLIDES 14-15)
+9. CLOSING (SLIDES 14-16)
 ==========================================================================
 
 Suggested words:
@@ -259,7 +259,8 @@ we found, measure answer quality on a larger approved corpus, and add the
 identity and data controls needed for production. Thank you. I can now show
 the workflow live or answer questions about any component."
 
-Add the actual project maker names and responsibilities on slide 15.
+Slide 15 is a five-minute live walkthrough. Replace the eight name placeholders
+below Thank You on slide 16 with the actual project maker names.
 
 ==========================================================================
 10. QUICK ANSWERS TO LIKELY QUESTIONS
