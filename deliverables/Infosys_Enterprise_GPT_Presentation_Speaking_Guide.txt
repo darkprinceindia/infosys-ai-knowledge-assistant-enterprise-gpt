@@ -842,4 +842,291 @@ GitHub repository; each teammate developed a branch, reviewed pull requests,
 and integrated through agreed API and database contracts. Together, those
 pieces form one working knowledge assistant."
 
+==========================================================================
+VIDEO WALKTHROUGH: 15-20 MINUTES FROM DOCUMENT TO FEEDBACK
+==========================================================================
+
+This section is a recording plan. Read the Suggested words in your own voice;
+pause while a page loads or while you point to a source. The times add up to
+about 19 minutes. Keep the browser on screen for most of the video. Slides
+4-6 of the PowerPoint can help if you want a 30-second architecture picture,
+but the live app is enough for the walkthrough.
+
+BEFORE YOU PRESS RECORD
+
+- Open https://infosys-enterprise-gpt-demo.onrender.com/ and allow the free
+  service to wake up. Start recording only when the login page is ready.
+- Have the shared demo password ready. Type it into the masked Password field;
+  do not say it aloud or show configuration pages or API keys.
+- Keep Visitor_Badge_Demo_Guide.txt ready in this guide's deliverables folder.
+  It is a short sample document for the upload scene. If the live app says it
+  is already indexed, add today's recording date to one sentence in a copy
+  of the file and upload that copy, or use the existing document. The live
+  Render Free database can reset after a restart.
+- Set the browser so the text remains readable in the video. Close personal
+  tabs and notifications. Keep the PowerPoint available only if you plan to
+  show the architecture diagram or Thank You slide at the end.
+- Do not rely on a fixed answer count or response time. The dashboard numbers
+  depend on activity in the running app. Describe the labels you actually see.
+
+00:00-01:15  OPEN WITH THE PRODUCT AND THE PROBLEM
+
+On screen: Show the login page with the Infosys Enterprise GPT heading.
+
+Suggested words:
+"Hello. In this video I will walk through our Enterprise GPT capstone from
+the moment a document enters the knowledge library to the moment an employee
+gets a cited answer. I will also show what happens when a person cannot access
+a source, and how an administrator reviews usage and feedback. The problem we
+are solving is simple: policies, procedures and runbooks may exist, but people
+still lose time finding the correct passage and checking where an answer came
+from. Here, the question is connected to an approved document and a visible
+source. I will first add a small guide, then ask questions against it and one
+of the five documents already in the library."
+
+Transition: "Let me sign in as the administrator, who is allowed to manage
+the knowledge library."
+
+01:15-02:30  SIGN IN AND ORIENT THE VIEWER
+
+On screen: In Demo account choose "Administrator · all collections". Enter
+the password and click "Enter workspace". Point to the left navigation:
+"Ask assistant", "Knowledge library", "Connectors", "Quality analytics".
+
+Suggested words:
+"This page is the frontend: the HTML, CSS and JavaScript that the employee
+sees. The sign-in form sends the login request to the Python backend in
+app.py. The backend starts a session and decides which pages and documents
+this account may use. The administrator can reach all four pages. An ordinary
+employee can ask questions and inspect permitted sources, but cannot add a
+document or open the administrator analytics page. The browser does not read
+the database directly; it calls the backend whenever it needs data."
+
+02:30-04:15  SHOW THE FIVE STARTING DOCUMENTS
+
+On screen: Click "Knowledge library". Slowly point to the document cards.
+If useful, click "Open source" on one card and then close the preview with
+the X button.
+
+Suggested words:
+"The app starts with five sample knowledge sources: a Delivery escalation
+SOP, an Employee leave policy, an API incident runbook, an Approved AI
+services positioning guide, and a Project onboarding manual. These are the
+starting knowledge bank. The cards show the owner, department and access
+classification. Those labels are functional: they help the system decide who
+may use a document, and they appear again when we inspect a citation. When
+the app starts, knowledge.py reads these sample files and their metadata,
+breaks them into passages and stores them in SQLite. The same searchable
+bank is used later by both the ordinary search path and the MCP tool path."
+
+Point to the classifications: "Internal material can be read by signed-in
+demo employees. HR, Engineering and Sales material is limited to the matching
+department and the administrator."
+
+04:15-06:45  UPLOAD A NEW DOCUMENT AND EXPLAIN INDEXING
+
+On screen: Click "+ Add document". Choose the prepared
+Visitor_Badge_Demo_Guide.txt file. Fill the form as follows:
+  Title: Visitor badge request guide
+  Department: General
+  Access classification: Internal
+  Source owner: Reception Demo Team
+  Document type: Guide
+  Effective date: today's date (optional); leave expiry date blank.
+Then click "Validate and index". Wait for "Indexed ... into ... passages"
+and show the new card in Knowledge library.
+
+Suggested words while filling the form:
+"The administrator supplies both the file and its description. The title
+helps people recognize it. The department and classification set its scope.
+The owner tells us who should maintain it. The dates help the system avoid
+outdated material. Today I am using a short visitor badge guide, so we can
+see the whole journey clearly."
+
+Suggested words after clicking:
+"This click starts the ingestion pipeline. Browser JavaScript in static/app.js
+reads the file and sends it with the form fields to the upload endpoint in
+app.py. The backend checks the administrator's session, file type, size and
+required fields. knowledge.py extracts readable text, rejects a duplicate,
+separates sections into smaller passages, and adds those passages to the
+SQLite full-text index. This success message confirms the document is now
+searchable. The uploaded file is not a separate chatbot or model; it becomes
+another source in the same knowledge bank."
+
+If the upload fails, read the on-screen error. A duplicate means this exact
+content was indexed earlier; use a fresh copy with one changed sentence, or
+continue with the existing card. Do not spend video time debugging an API key.
+
+06:45-08:45  ASK ABOUT THE NEW FILE: THE LOCAL SEARCH ROUTE
+
+On screen: Click "Ask assistant". Leave Collection on "All". Type
+"How do I request a visitor badge?" and click "Ask assistant". Pause when
+the answer appears. Point to the route badge, answer, and "Sources used".
+
+Suggested words:
+"Now I am asking about the document we just added. The question leaves the
+browser through POST /api/query. app.py receives the signed-in request and
+classifies the topic. This question has no HR trigger, so it takes the local
+hybrid index route. knowledge.py compares the question with indexed document
+passages using text overlap, local lexical vectors and SQLite full-text
+search. It also checks the user's access and the document's status and dates.
+The best supported passage becomes the evidence for the answer. The numbered
+source below the answer is the link back to that evidence. The route badge
+tells us which path was used; this is the local path, not the MCP route."
+
+If the answer wording differs from the prepared text, read the actual answer
+on screen. If no answer appears, choose Collection "General" and ask a more
+specific question: "When should the host send visitor badge details to the
+reception desk?" Do not claim that the app found a source unless one appears.
+
+08:45-10:45  ASK AN HR QUESTION: THE MCP TOOL ROUTE
+
+On screen: Keep Collection on "All". Replace the question with
+"What is the annual leave request process?" and click "Ask assistant".
+Point to the route badge, the answer and the Employee leave policy citation.
+
+Suggested words:
+"This time the question contains annual leave, so app.py classifies it as
+HR. That route calls the read-only search_curated_knowledge tool in
+mcp_server.py using the Model Context Protocol, or MCP. The tool searches the
+same indexed knowledge bank, but it is called through a defined tool
+interface. It receives the signed-in user's context and returns candidate
+passages. app.py checks access again after the tool returns. Only then can a
+passage support the answer. The Employee leave policy we saw earlier is why
+the assistant can explain this process. The MCP connector is the route for
+this HR question; it is not an extra policy database."
+
+Say the answer model only after reading the route badge: "The badge also
+shows whether the final wording used Gemini or the local extractive method.
+Gemini is optional and receives only the permitted passages. Either way, the
+answer must show a valid source citation." Do not assume Gemini ran just
+because an API key exists in the server settings.
+
+10:45-12:00  OPEN THE CITED SOURCE
+
+On screen: Click the numbered source button, for example "[1] Employee
+leave policy · Annual leave". In the source preview, point to title,
+department, classification, owner, effective date and original text. Close
+the dialog with X.
+
+Suggested words:
+"The citation is useful because it lets the employee check the original
+document instead of accepting a chatbot sentence blindly. This preview is
+another backend request: the browser asks for that document by ID, and the
+backend checks access again before returning it. The title and date help
+the employee judge which source was used. The passage shown in the answer
+and the full document preview are connected by the same document ID."
+
+12:00-13:00  SHOW WHERE MCP APPEARS IN THE INTERFACE
+
+On screen: Click "Connectors". Point to the connector card and the
+"How routing works" row: Question classification -> MCP tool or local index
+-> Permission filter -> Cited answer.
+
+Suggested words:
+"This page makes the tool-selection step visible. For our visitor badge
+question, the backend selected the local index. For annual leave, it selected
+the MCP curated-knowledge tool. The MCP tool is read-only: it looks up
+passages; it does not edit documents. After either route, the same permission
+and evidence checks control what may appear in the answer. This is how the
+frontend, backend, connector and knowledge bank work as one product."
+
+13:00-14:00  CAPTURE FEEDBACK ON AN ANSWER
+
+On screen: Click "Ask assistant". The last answer should still be visible.
+Scroll to "Was this useful?" and click "Yes" if the cited result was useful,
+or "Needs work" if you can explain a real problem. Point to "Feedback saved".
+
+Suggested words:
+"The user can rate a specific answer here. static/app.js sends the rating
+and the answer's query ID to /api/feedback. The Python backend stores that
+record in SQLite, linked to the question that produced it. This is useful
+because a knowledge owner can later review what users asked and where the
+answer was insufficient. The button does not retrain the model instantly; it
+records a signal for review."
+
+14:00-16:00  REVIEW THE QUALITY DASHBOARD
+
+On screen: Click "Quality analytics", then "Refresh" if needed. Point in
+order to Total questions, No-answer rate, Citation coverage, Average
+response, Documents by collection, Retrieval routes, Recent questions, and
+Connector events. Scroll slowly enough for each label to be readable.
+
+Suggested words:
+"This is the administrator's quality view. Total questions counts what
+people asked. No-answer rate tells us how often the system found too little
+evidence. Citation coverage shows how often an answer had a source. Average
+response is the time taken to return an answer. Documents by collection
+shows how the knowledge bank is distributed. Retrieval routes shows how
+often the local path and MCP path were selected. Recent questions tell us
+which topics people tried and whether each was answered. Connector events
+show the MCP call outcome, number of returned sources and timing. The
+feedback we just clicked is also saved in the backend's analytics data,
+although this page currently emphasizes question, citation and connector
+activity rather than displaying a separate feedback chart."
+
+Do not read out old numbers from a slide; read the current values in the app.
+These counts describe activity. They are not a measured accuracy score.
+
+16:00-18:00  SHOW THE ACCESS BOUNDARY WITH AN EMPLOYEE ACCOUNT
+
+On screen: Click the account control at the bottom left to sign out. On the
+login page choose "Delivery employee", enter the password and click "Enter
+workspace". Refresh the page once to ensure the screen is clear, then ask
+"What is the annual leave request process?" with Collection "All".
+
+Suggested words:
+"Now I am the Delivery employee asking the same HR question. The question
+still follows the HR tool route, but this account has no right to use the
+HR-only policy. The connector search checks the scope, and app.py checks the
+returned passages again. The result should contain no HR policy citation.
+This shows that the policy bank is not simply shared with everyone who can
+open the website. The difference comes from the session and permission
+checks in the backend, not from hiding a button in the browser."
+
+Pause to show the actual no-answer message. If the old administrator result
+is still visible before asking, do not describe it as the employee's answer;
+the fresh question is the permission test. The employee should also not see
+the administrator's Quality analytics link or Add document button.
+
+18:00-19:30  RECAP THE COMPLETE PATH AND CLOSE
+
+On screen: Return to the Ask assistant page, or briefly show slide 4 of the
+PowerPoint. Finish with slide 16, Thank You, after adding the real maker names.
+
+Suggested words:
+"We have followed one complete chain. An administrator uploaded a document
+through the browser. app.py accepted the request, and knowledge.py extracted,
+split and indexed the text in SQLite. A question then came through the same
+browser to /api/query. The backend selected either local search or the MCP
+tool, retrieved possible passages, checked whether the user could use them,
+and produced an answer with a numbered citation. The employee opened the
+source and rated the answer. Finally, the administrator's analytics page
+showed the activity and connector route, and the Delivery account showed why
+access control matters. Together, those parts make a single knowledge
+assistant rather than separate upload, search and dashboard demos. Thank you
+for watching. I can now take questions or show any step again."
+
+SHORT ANSWERS IF A VIEWER ASKS DURING THE VIDEO
+
+"Where are the five policies?"  They are five sample files under data/ and
+are indexed into SQLite when the app starts. The library cards show them.
+
+"When exactly is MCP used?"  After an HR question is classified in app.py,
+before the final permission check and cited response. Other questions use
+the local index route.
+
+"Does Gemini search the documents?"  No. Retrieval finds permitted
+passages first. Gemini may write the answer from those passages if available;
+otherwise the application extracts cited sentences locally.
+
+"Where does feedback go?"  The rating is sent to /api/feedback and stored
+with the query in SQLite. Analytics returns feedback counts and average
+rating, while the current Quality analytics page focuses on other activity
+signals.
+
+"What if the document is missing?"  The app returns an insufficient-evidence
+answer with no source citation. An administrator can add an approved document
+and ask again.
+
 END OF SPEAKING GUIDE
