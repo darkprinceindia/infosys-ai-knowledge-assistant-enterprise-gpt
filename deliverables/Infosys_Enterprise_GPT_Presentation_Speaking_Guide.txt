@@ -6,9 +6,11 @@ This guide matches the 15-slide capstone presentation. Speak naturally rather
 than reading every sentence word for word.
 
 IMPORTANT CONTEXT TO STATE AT THE START
-This is a capstone prototype with fictional sample documents. The screens were
-captured from the locally running application. It is not an official Infosys
-system, a public deployment, or an approved place for real internal documents.
+This is a capstone prototype with fictional sample documents. The presentation
+screens were captured from the locally running application. A public review
+demo is now available at https://infosys-enterprise-gpt-demo.onrender.com/ .
+It is not an official Infosys system or an approved place for real internal
+documents.
 
 ONE-SENTENCE SUMMARY
 Enterprise GPT is a permission-aware knowledge assistant: an employee asks a
@@ -195,7 +197,7 @@ permission check after the MCP tool returns a result.
 ==========================================================================
 
 Suggested sequence:
-1. Sign in as Administrator using the demo credentials documented in README.
+1. Sign in as Administrator using the demo password shared by the project owner.
 2. Ask: "What is the annual leave request process?"
 3. Point out the MCP route, answer, and citation [1].
 4. Open citation [1]. Show the source title, section, owner, classification,
@@ -232,11 +234,11 @@ SOP question can all follow the same controlled workflow. Administrators can
 see unanswered questions and improve the document collection over time."
 
 "This is still a capstone prototype. Its seeded data is fictional. The UI and
-local backend demonstrate the concept, but real company use would need SSO and
+backend demonstrate the concept, but real company use would need SSO and
 managed roles, secure storage, document scanning, stronger citation and
-prompt-injection testing, privacy review, and approved infrastructure. A Render
-deployment blueprint exists, but a public app URL is not recorded in this
-project."
+prompt-injection testing, privacy review, and approved infrastructure. A
+public Render Free review demo is available, but its temporary storage is
+suited to a short demonstration rather than real company documents."
 
 Testing statement:
 "Seven workflow tests passed in this workspace. They cover the MCP path,
@@ -294,8 +296,303 @@ A: No. They summarize local demo activity. Citation coverage and a retrieval
    score do not prove that an answer is correct.
 
 Q: Is it deployed and ready for real Infosys documents?
-A: The reviewed application runs locally. A Render blueprint is prepared,
-   but no public URL is recorded. Real company content needs the production
-   controls and approvals described above.
+A: A public review demo runs at
+   https://infosys-enterprise-gpt-demo.onrender.com/ . It contains fictional
+   sample content. Real company content needs the production controls and
+   approvals described above.
+
+==========================================================================
+FOR UNDERSTANDING: HOW THE WHOLE PROGRAM FITS TOGETHER
+==========================================================================
+
+These are study notes to help you explain the project in your own words. The
+short speaking script above is for the slides; this section goes through the
+working parts in the order they are used. Think of the program as a library
+desk: a person asks a question, the desk checks who they are, finds pages
+they are allowed to read, and gives an answer that points to those pages.
+
+THE WHOLE JOURNEY IN ONE LINE
+
+Person in browser -> static/app.js -> app.py -> knowledge.py or mcp_server.py
+-> SQLite knowledge bank -> app.py -> static/app.js -> answer on the page.
+
+The arrows are ordinary requests and responses. The browser sends data to
+the Python server over HTTPS; the server sends JSON data back. The browser
+never opens the database or uses the Gemini API key directly.
+
+1. WHAT IS READY BEFORE ANYONE ASKS A QUESTION?
+
+When app.py starts, it calls knowledge.py to create the database tables and
+seed the demo accounts and sample documents. The database is data/app.db, a
+SQLite file. data/source_metadata.csv tells the program which five Markdown
+files to import and supplies their department, access classification, owner,
+type, and dates. The document text and searchable passages are stored in the
+database. The samples are fictional teaching examples, not Infosys policies.
+
+The five starting documents are:
+- Delivery escalation SOP: P1/P2 severity, who to notify, client updates,
+  and incident closure. It is marked Internal.
+- Employee leave policy: annual leave, sick leave, and policy precedence.
+  It is marked HR.
+- API incident runbook: triage, safe rollback, and escalation. It is marked
+  Engineering.
+- Approved AI services positioning: client claims and proposal review. It
+  is marked Sales.
+- Project onboarding manual: project setup and first-week review. It is
+  marked Internal.
+
+"Department" helps organize and route a search. "Classification" decides
+who may read a document. In this demo, employees can read Internal content;
+HR, Sales, and Engineering content is limited to the matching department;
+Restricted content is for the administrator. The administrator can read all
+classifications. A Delivery employee can read the Internal delivery SOP, but
+not the HR leave policy. The backend applies these rules, not just the page.
+
+2. HOW THE FRONTEND AND BACKEND TALK
+
+static/index.html defines the visible pages and forms. static/style.css makes
+them look like the Infosys-inspired demo. static/app.js is the browser code
+that listens for clicks, reads form values, calls the server, and fills in
+the page. app.py is the Python HTTP server. It serves those static files and
+receives API requests such as /api/login, /api/query, and /api/documents.
+
+For example, clicking "Ask assistant" does not search a document inside the
+browser. static/app.js sends a small JSON message to POST /api/query. The
+server replies with JSON containing answer text, citations, route, timing,
+and a retrieval signal. static/app.js turns that reply into the answer card.
+The site is one program because each part passes a clearly defined result to
+the next part.
+
+3. HOW LOGIN WORKS
+
+The login dropdown in static/index.html offers the demo administrator and
+four employee accounts. The selected account and typed password go through
+static/app.js to POST /api/login in app.py. app.py looks up that account in
+SQLite and asks knowledge.py to verify the stored password hash. On success,
+app.py gives the browser a signed session cookie that lasts up to 12 hours.
+The browser sends this cookie with later requests, so the server knows which
+demo user is asking. On page reload, GET /api/me checks the session again.
+
+The accounts use the shared demo password set by DEMO_PASSWORD in the server
+environment; the login screen does not display it. There is no employee
+self-registration in this prototype. The frontend hides administrator-only
+buttons for employees, and app.py also refuses administrator operations from
+an employee. Hiding a button alone would not be a security check.
+
+4. A QUESTION'S STEP-BY-STEP JOURNEY
+
+Use this example: "How do we escalate a P1 delivery incident?"
+
+1) You type the question or click its suggestion on the Ask assistant page.
+   You may leave Collection as All or choose one collection yourself.
+2) The ask() function in static/app.js sends the question and collection to
+   POST /api/query in app.py. The signed login cookie goes with the request.
+3) app.py checks the cookie, finds the user's role and department, and checks
+   that the question and collection value are valid.
+4) knowledge.py classifies the topic from simple clue words unless you chose
+   a collection. Here, "P1", "delivery", and "incident" point to Delivery.
+5) app.py chooses the search route. Delivery uses knowledge.py directly.
+   HR routes through the MCP tool explained below.
+6) knowledge.py searches stored document passages in SQLite. It first keeps
+   only active documents that have not expired, fit the collection filter,
+   and are accessible to this user. It ranks the remaining passages using
+   word overlap, a small locally calculated text vector, and SQLite FTS5
+   full-text search. It is not a learned semantic embedding model.
+7) app.py checks that the leading passages have enough evidence and keeps at
+   most three for the answer. If nothing is strong enough, it says it lacks
+   evidence instead of inventing an answer.
+8) If Gemini is available, knowledge.py sends the question and ONLY those
+   permitted passages to Gemini using a server-side key and asks for numbered
+   source citations. It accepts the model's answer only if its citation
+   numbers point to the supplied passages. If Gemini is unavailable or its
+   answer fails that check, knowledge.py builds a simpler answer by selecting
+   relevant sentences from the passages.
+9) app.py records the question, route, answer status, response time, source
+   links, and an audit event in SQLite. It sends the answer and citation
+   details back as JSON.
+10) renderAnswer() in static/app.js shows the answer, [1]/[2] source cards,
+    route, model/fallback label, retrieval signal, and time. Clicking a source
+    card calls GET /api/documents/{id}; app.py and knowledge.py check access
+    again before showing the source preview.
+
+In this example, the Delivery escalation SOP can supply the P1 escalation
+steps: notify the on-call delivery manager within 15 minutes, open an
+incident record, and start a bridge with the engineering lead. The source
+card shows where that answer came from. The percentage called "Retrieval
+signal" describes a text-match score; it is not the probability of truth.
+
+5. WHAT QUESTIONS CAN I ASK?
+
+Ask about information actually present in the five sample documents, such as:
+- "How do we escalate a P1 delivery incident?" -> Delivery escalation SOP.
+- "What is the annual leave request process?" -> Employee leave policy.
+- "When should an API deployment be rolled back?" -> API incident runbook.
+- "What requires review before a client proposal?" -> Sales positioning.
+- "What is on the new project checklist?" -> Project onboarding manual.
+
+An HR example follows the same overall path, but step 5 calls the MCP
+connector. An HR employee or administrator can receive a leave-policy
+citation. A Delivery employee asking the same question should not receive
+the HR-only passage. You can also ask about a newly uploaded document after
+it has been indexed. A question about a topic absent from all permitted
+sources should produce the insufficient-evidence message.
+
+6. WHAT RAG MEANS IN THIS PROJECT
+
+RAG means Retrieval-Augmented Generation. In everyday terms: look up the
+right pages first, put those pages beside the question, then write an answer
+from them. Here, the "retrieve" part is knowledge.py searching SQLite. The
+"augmentation" is app.py passing selected source passages to the answer
+step. The "generation" part can be Gemini or the local sentence-selection
+fallback. A citation links the answer back to the page used.
+
+There is no LangChain library or separate frontend chaining engine here.
+The chain is the order of our own functions: browser submit -> API login
+check -> classify -> search -> evidence check -> answer -> save -> display.
+MCP is a tool boundary inside that chain for HR questions, not the whole RAG
+system. No new model was trained on these documents.
+
+7. HOW AN ADMINISTRATOR ADDS A DOCUMENT
+
+Only an administrator sees "+ Add document" in the Knowledge library. The
+form asks for a title, file, department, classification, source owner,
+document type, and optional effective and expiry dates. Supported files are
+TXT, Markdown, DOCX, and text-readable PDF, up to 5 MB. A scanned PDF with
+no extractable text will not become useful knowledge without OCR, which this
+prototype does not provide.
+
+Suppose the administrator adds a fictional "Equipment request guide" with
+General department and Internal classification. Its text could say:
+"Employees request a laptop through the service desk. Their manager approves
+the request before IT assigns a device." After indexing, a user can ask,
+"How do I request a laptop?" and the new guide can become a cited source.
+
+The upload path is:
+1) static/app.js reads the selected file in the browser, converts its bytes
+   to base64 text, adds the form metadata, and sends JSON to
+   POST /api/documents/upload.
+2) app.py checks the login and administrator role, decodes the file, and asks
+   knowledge.py to extract its readable text.
+3) knowledge.py checks the file type, 5 MB limit, required metadata, allowed
+   department/classification, enough readable text, and whether identical
+   text is already indexed. The duplicate check uses a SHA-256 checksum.
+4) knowledge.py divides the text by headings and into short overlapping
+   passages. For each passage it stores searchable words, a local lexical
+   vector, and an FTS5 search entry. It also stores the full extracted text,
+   metadata, active status, and an audit entry in data/app.db. It does not
+   keep the original uploaded file bytes as a separate download.
+5) app.py returns the new document ID and passage count. static/app.js shows
+   an "Indexed ... passages" message and refreshes the library.
+
+The form says "approved document", but the software does not independently
+approve or scan a file. The administrator must choose appropriate content.
+On Render Free, uploaded records are temporary because data/app.db is on an
+ephemeral filesystem; a restart or redeploy can remove them. The five
+fictional starter documents can be seeded again.
+
+8. WHAT THE CONNECTORS PAGE AND MCP ACTUALLY DO
+
+The Connectors page shows the one configured connector, "curated-knowledge",
+and a small routing picture. static/app.js asks GET /api/connectors;
+app.py returns its name, MCP stdio JSON-RPC protocol, tool name, scope, and
+a "ready" label. That label is configuration information, not a live test
+of a remote company service. This page does not let a user add connectors.
+
+For an HR question, app.py starts mcp_server.py as a separate local Python
+process. It sends structured JSON-RPC messages through the process's
+standard input: initialize, then call search_curated_knowledge with the
+question, logged-in user ID, and department. mcp_server.py looks up the user
+and calls knowledge.py's permission-filtered search on the SAME SQLite bank.
+It returns matching passages through standard output. app.py checks access
+again before using them. If the MCP call errors, app.py falls back to local
+search and records that route. This is a real local MCP-style tool call, not
+a connection to a live HR website or an external policy database.
+
+Why include it? MCP demonstrates how a future approved tool could be called
+through a clear boundary while the main backend stays responsible for access
+checks. Successful and failed MCP calls are saved as connector events for
+administrator review. Non-HR questions normally use the local index
+directly, so they do not create an MCP event.
+
+9. WHAT QUALITY ANALYTICS SHOWS
+
+Quality analytics is visible only to an administrator. Opening it, or
+clicking Refresh, makes static/app.js call GET /api/analytics. app.py checks
+the administrator role, then knowledge.py reads saved database activity and
+calculates the figures. The browser draws the cards, bars, and recent rows.
+It is a view of stored events, not a second AI model or a live data stream.
+
+What is on the current page:
+- Total questions: how many questions have been recorded.
+- No-answer rate: the percentage that lacked enough source evidence.
+- Citation coverage: the percentage not marked "no answer". This is a
+  simple activity measure, not a test that every answer is correct.
+- Average response: average backend query time in milliseconds.
+- Documents by collection: number of active documents per department.
+- Retrieval routes: how many questions used local search, MCP, or fallback.
+- Recent questions: the latest question, collection, route, and whether it
+  received an answer.
+- Connector events: recent MCP call status, number of returned sources, and
+  connector time.
+
+For example, asking the P1 delivery question adds one to Total questions,
+adds a Local hybrid index route, and places the question in Recent questions.
+Asking the leave question can add an MCP route and a connector event. If a
+question has no permitted evidence, No-answer rate can increase. Clicking
+"Yes" or "Needs work" under an answer sends a rating to POST /api/feedback;
+app.py checks that it belongs to the user (or admin) and stores it. The
+backend also calculates feedback count and average rating, but this version
+of the Quality analytics page does not display those two values.
+
+These numbers help an administrator spot missing documents or a failing
+connector. They are not measured accuracy, business impact, or proof that
+the assistant gave correct policy advice. On Render Free, the activity
+history can reset with the temporary database.
+
+10. IMPORTANT FILES AND THEIR JOBS
+
+static/index.html          Page structure: login, ask form, library, connector
+                           view, analytics view, and source dialog.
+static/style.css           Colors, layout, typography, and responsive styling.
+static/app.js              Browser actions, JSON API calls, and screen updates.
+app.py                     HTTP server, endpoints, sessions, access checks,
+                           route decision, MCP call, answer and event logging.
+knowledge.py               SQLite setup, starter documents, text extraction,
+                           passage indexing, search, permissions, Gemini/local
+                           answer functions, and analytics calculations.
+mcp_server.py              Read-only local MCP search tool for HR route.
+prompts/grounded_answer.txt Instructions sent with permitted passages when
+                           Gemini is used.
+data/source_metadata.csv   List and metadata for the five starter documents.
+data/sample_*/             The five fictional Markdown source documents.
+data/app.db                SQLite runtime knowledge bank and activity log;
+                           created by the app and not committed to Git.
+.env / Render variables    Password, signing secret, optional Gemini key,
+                           host, port, and model; not browser code.
+render.yaml                Template for a Render Blueprint deployment.
+
+The files are linked by function calls and HTTP endpoints, not by putting
+everything in one giant file. static/app.js never imports knowledge.py;
+it talks to app.py over the network. app.py imports knowledge.py, and for
+HR questions starts mcp_server.py, which also uses knowledge.py. Both read
+the same SQLite data so uploaded documents can be searched later.
+
+11. A SHORT EXPLANATION YOU CAN SAY ALOUD
+
+"First, our administrator loads fictional approved guides into a searchable
+knowledge bank. The browser sends a signed-in user's question to the Python
+backend. The backend decides where to search, checks which documents that
+user may read, and finds the strongest matching passages. HR questions also
+demonstrate a controlled MCP tool call. Gemini may write from those passages;
+if it is unavailable, the app selects source sentences itself. The result
+returns to the browser with clickable citations. Every question and connector
+call is recorded so the administrator can inspect usage and gaps in Quality
+analytics. This makes the page, backend, knowledge bank, connector, and
+analytics work as one assistant."
+
+During the public deployment check, the supplied Gemini key could list
+available models, but generation returned a temporary high-demand error.
+The cited local answer path worked. Present this honestly if the live demo
+shows "Local extractive" beside an answer.
 
 END OF SPEAKING GUIDE
