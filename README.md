@@ -1,14 +1,26 @@
 # Infosys AI Knowledge Assistant (Enterprise GPT)
 
+## Project overview
+
 A capstone prototype for governed document question answering. Employees ask natural-language questions and receive answers with source citations. Administrators can upload approved documents, inspect connector activity, and review quality signals. The interface uses Infosys-inspired styling for the demonstration and is not an official Infosys product.
 
-**Live demo:** [infosys-enterprise-gpt-demo.onrender.com](https://infosys-enterprise-gpt-demo.onrender.com/) (Render Free). Select a demo account and request the shared password from the project owner.
+## Business problem
+
+Policies, procedures, and runbooks can be scattered across files and teams. Employees need to find the relevant passage, check its source, and avoid relying on material outside their access scope.
+
+## Product goal
+
+Answer from permitted documents with a citation, or clearly say when the available evidence is insufficient.
+
+## Live demo
+
+[infosys-enterprise-gpt-demo.onrender.com](https://infosys-enterprise-gpt-demo.onrender.com/) runs on Render Free. Select a demo account and request the shared password from the project owner.
 
 > **Demo data:** The included documents are fictional examples created for this project. They are not Infosys policies or internal records.
 
 ![Assistant home screen with the Infosys-inspired interface](assets/screenshots/01_assistant_home.png)
 
-## Product preview
+## Screenshots
 
 | Cited answer | Source preview |
 | :---: | :---: |
@@ -20,7 +32,7 @@ A capstone prototype for governed document question answering. Employees ask nat
 
 The [employee access screenshot](assets/screenshots/10_employee_access_boundary.png) shows how a Delivery account is kept outside HR-only material.
 
-## How the parts connect
+## Architecture
 
 ```mermaid
 flowchart TB
@@ -39,7 +51,9 @@ flowchart TB
 
 The MCP tool is a bundled local connector. Gemini receives only retrieved passages that passed the access filter. The local hashed vectors are lexical features, not semantic embeddings. See the [architecture notes](docs/architecture.md).
 
-### Question-to-answer pipeline
+## AI workflow
+
+An administrator upload is validated, converted to text, split into sections and passages, then indexed in SQLite FTS5. For a question, the backend chooses the read-only MCP search tool for HR topics or local search for other topics. It filters retrieved passages by role, department, and document status before building the answer. Gemini may phrase an answer from those permitted passages when configured; otherwise the application extracts cited source sentences.
 
 ```mermaid
 flowchart LR
@@ -54,12 +68,13 @@ flowchart LR
     M -->|"No or unavailable"| L["Return extractive answer"]
 ```
 
-## Run locally
+## How to run locally
 
 Requires Python 3.11 or newer. No frontend build step is needed.
 
 ```powershell
-cd G:\AlmaBetter\infosys-ai-knowledge-assistant-enterprise-gpt
+git clone https://github.com/darkprinceindia/infosys-ai-knowledge-assistant-enterprise-gpt.git
+cd infosys-ai-knowledge-assistant-enterprise-gpt
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 .\.venv\Scripts\python.exe app.py
@@ -79,7 +94,7 @@ For macOS/Linux, activate the virtual environment and run `python app.py` with t
 
 See [docs/demo_script.md](docs/demo_script.md) for a recording script and narration.
 
-## What works
+## Key features
 
 - Upload validation, duplicate detection, DOCX/PDF/TXT/MD extraction, section-aware chunking, source metadata, and SQLite indexing.
 - Permission-aware search with local lexical vectors and term overlap, filtering expired or archived documents.
@@ -88,7 +103,21 @@ See [docs/demo_script.md](docs/demo_script.md) for a recording script and narrat
 - No-answer behavior, source preview, feedback capture, role-based screens, audit events, and quality analytics.
 - Five fictional sample documents covering delivery, HR, engineering, sales, and project onboarding.
 
-## Technology by component
+## Data sources used
+
+The repository seeds five fictional Markdown documents and their access metadata from [`data/source_metadata.csv`](data/source_metadata.csv). They are examples for testing the workflow, not company policies.
+
+| Topic | Seed document |
+| --- | --- |
+| Delivery incidents | [Delivery escalation SOP](data/sample_sops/delivery-escalation.md) |
+| Leave requests | [Employee leave policy](data/sample_hr_policies/leave-policy.md) |
+| API incidents | [API incident runbook](data/sample_engineering_guides/incident-runbook.md) |
+| Client proposals | [Approved AI services positioning](data/sample_sales_assets/approved-positioning.md) |
+| New projects | [Project onboarding manual](data/sample_project_manuals/onboarding-manual.md) |
+
+Administrators can also add approved TXT, Markdown, DOCX, or PDF files through the Knowledge library. Uploads are indexed with owner, department, classification, and dates.
+
+## Tools and technologies used
 
 | Part | Technology | Purpose |
 | --- | --- | --- |
@@ -115,7 +144,7 @@ The browser calls JSON endpoints in `app.py`. Login sets an `HttpOnly` session c
 
 The [full API reference](docs/api_documentation.md) includes the remaining endpoints, access rules, request and response fields, and error codes.
 
-## Configuration
+## Environment variables
 
 Copy `.env.example` to `.env` and set values before a shared deployment. `.env` is ignored by Git.
 
@@ -144,7 +173,11 @@ tests/                 workflow and access-control tests
 docs/                  architecture, APIs, demo, evaluation, deployment notes
 ```
 
-## Test
+## Evaluation approach
+
+The [six evaluation questions](docs/evaluation_queries.csv) cover a cited answer from each main department, an HR access denial for a Delivery user, and an unsupported question that should receive no citation. Review each result for the expected source, route, citation, and access behavior. This is a small functional check of the prototype, not a measured accuracy benchmark for real enterprise content.
+
+Run the automated workflow and access-control tests locally:
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
@@ -152,10 +185,26 @@ docs/                  architecture, APIs, demo, evaluation, deployment notes
 
 The tests use a temporary database and verify the MCP answer route, citations, restricted-source behavior, no-answer handling, seeded content, duplicate detection, and analytics.
 
-## Submission status
+## Known limitations
 
-The repository and public review demo are ready. A recording and actual team-member names still need to be added for final submission. The application is a **capstone prototype**. The full enterprise blueprint would additionally require evaluated semantic embeddings and a vector store, managed connectors, enterprise identity, document refresh and approval workflows, and deeper answer-quality monitoring. These limitations are detailed in [security notes](docs/security_notes.md) and [deployment notes](docs/deployment.md). The brief's suggested stacks are options rather than mandatory choices; this implementation uses Python's standard library and a small optional PDF package to remain easy to run.
+- Retrieval uses local hashed lexical vectors and SQLite FTS5, not semantic model embeddings or a vector database.
+- The MCP tool is a bundled read-only demonstration over the seeded knowledge bank, not a connection to a live company system.
+- Demo accounts and a shared password are for review; enterprise use would need managed identity, document approvals, stronger evaluation, and security and privacy review.
+- Render Free storage is temporary: uploaded files, feedback, and analytics history can reset when the service restarts.
+
+See the [security notes](docs/security_notes.md) and [deployment guide](docs/deployment.md) for the production work behind these limits.
 
 ## Team contribution
 
-Implementation, sample data, documentation, and automated tests were prepared in this workspace. Add the actual contributor names and responsibilities before final submission.
+| Project maker | Track |
+| --- | --- |
+| Soumyakanta Mishra | Data Science |
+| Sayan Modak | Data Science |
+| Pulkit Narang | Data Science |
+| Subhansu Bose | Data Science |
+| Chandra Akash Kiran | Data Science |
+| M.S. Pavan Shankar | Data Science |
+| Shruti Vishwas Deshpande | Web3 |
+| Sanket Arun Patil | Data Science |
+
+The team collaborated on research, implementation, testing, and documentation. Soumyakanta Mishra coordinated the work across the group.
