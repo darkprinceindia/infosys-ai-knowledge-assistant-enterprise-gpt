@@ -207,4 +207,4 @@ See the [security notes](docs/security_notes.md) and [deployment guide](docs/dep
 | Shruti Vishwas Deshpande | Web3 |
 | Sanket Arun Patil | Data Science |
 
-The team collaborated on research, implementation, testing, and documentation. Soumyakanta Mishra coordinated the work across the group.
+The team collaborated on research, implementation, testing, and documentation.
