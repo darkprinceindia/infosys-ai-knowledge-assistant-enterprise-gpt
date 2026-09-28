@@ -117,8 +117,11 @@ def answer_query(question: str, user: dict, requested_department: str = "All") -
         sources = []
         answer = "I could not find enough evidence in the approved sources to answer this question. Try another term or ask a knowledge owner to add the missing document."
         confidence = 0.0
+        synthesis = "No answer"
     else:
-        answer = k.gemini_answer(question, sources) or k.extractive_answer(question, sources)
+        model_answer = k.gemini_answer(question, sources)
+        answer = model_answer or k.extractive_answer(question, sources)
+        synthesis = "Gemini" if model_answer else "Local extractive"
         confidence = min(0.99, round(sources[0]["score"], 2))
     query_id = uuid.uuid4().hex
     latency_ms = int((time.monotonic() - start) * 1000)
@@ -138,7 +141,7 @@ def answer_query(question: str, user: dict, requested_department: str = "All") -
                  for i, s in enumerate(sources, 1)]
     return {"id": query_id, "answer": answer, "citations": citations, "route": route,
             "department": department, "confidence": confidence, "no_answer": no_answer,
-            "latency_ms": latency_ms, "model": "Gemini when configured; otherwise local grounded extractive synthesis"}
+            "latency_ms": latency_ms, "model": synthesis}
 
 
 class Handler(BaseHTTPRequestHandler):

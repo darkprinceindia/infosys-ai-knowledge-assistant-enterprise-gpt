@@ -10,6 +10,7 @@ from pathlib import Path
 TEMP = tempfile.TemporaryDirectory()
 os.environ["APP_DB"] = str(Path(TEMP.name) / "test.db")
 os.environ["DEMO_PASSWORD"] = "test-password"
+os.environ["GEMINI_API_KEY"] = ""
 
 import knowledge as k  # noqa: E402
 import app  # noqa: E402
@@ -37,6 +38,7 @@ class WorkflowTests(unittest.TestCase):
         result = app.answer_query("How many annual leave days do employees receive?", self.user("hr"))
         self.assertFalse(result["no_answer"])
         self.assertIn("MCP", result["route"])
+        self.assertEqual(result["model"], "Local extractive")
         self.assertTrue(result["citations"])
         self.assertIn("[1]", result["answer"])
         self.assertEqual(result["citations"][0]["classification"], "HR")

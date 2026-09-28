@@ -340,7 +340,7 @@ def gemini_answer(question: str, sources: list[dict]) -> str | None:
                            for i, s in enumerate(sources, 1))
     template = (ROOT / "prompts" / "grounded_answer.txt").read_text(encoding="utf-8")
     prompt = template.format(question=question, context=context)
-    model = os.environ.get("GEMINI_MODEL", "gemini-2.5-flash")
+    model = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
     payload = {"contents": [{"parts": [{"text": prompt}]}], "generationConfig": {"temperature": 0.1, "maxOutputTokens": 600}}
     request = urllib.request.Request(url, data=json.dumps(payload).encode(),

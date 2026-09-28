@@ -60,7 +60,7 @@ function loadSuggestions() {
 function renderAnswer(result) {
   state.answer = result;
   $('answer-card').classList.remove('hidden');
-  $('answer-route').textContent = result.route;
+  $('answer-route').textContent = `${result.route} · ${result.model}`;
   $('answer-text').textContent = result.answer;
   $('answer-confidence').textContent = result.no_answer ? 'Evidence: insufficient' : `Retrieval signal: ${Math.round(result.confidence * 100)}%`;
   $('answer-latency').textContent = `${result.latency_ms} ms`;

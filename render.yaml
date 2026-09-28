@@ -13,3 +13,7 @@ services:
         generateValue: true
       - key: DEMO_PASSWORD
         sync: false
+      - key: GEMINI_MODEL
+        value: gemini-flash-latest
+      - key: GEMINI_API_KEY
+        sync: false
