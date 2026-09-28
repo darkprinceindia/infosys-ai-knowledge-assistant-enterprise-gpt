@@ -18,7 +18,7 @@ A capstone prototype for governed document question answering. Employees ask nat
 | :---: | :---: |
 | ![Administrator document upload](assets/screenshots/05_document_ingestion.png) | ![Quality analytics dashboard](assets/screenshots/07_quality_analytics.png) |
 
-The [employee access screenshot](assets/screenshots/10_employee_access_boundary.png) shows how a Delivery account is kept outside HR-only material. The [presentation](deliverables/Infosys_Enterprise_GPT_Capstone_Presentation_v4.pptx) and [speaking guide](deliverables/Infosys_Enterprise_GPT_Presentation_Speaking_Guide.txt) provide a guided walkthrough.
+The [employee access screenshot](assets/screenshots/10_employee_access_boundary.png) shows how a Delivery account is kept outside HR-only material.
 
 ## How the parts connect
 
