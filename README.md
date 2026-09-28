@@ -99,6 +99,22 @@ See [docs/demo_script.md](docs/demo_script.md) for a recording script and narrat
 | Optional LLM | Gemini API | Synthesize an answer from approved retrieved passages. |
 | PDF intake | `pypdf` | Extract text from uploaded PDFs. |
 
+## API at a glance
+
+The browser calls JSON endpoints in `app.py`. Login sets an `HttpOnly` session cookie; protected routes use that cookie and apply the signed-in user's role and department.
+
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/login` | Sign in and start a session. |
+| `GET` | `/api/me` | Return the current user. |
+| `POST` | `/api/query` | Ask a question and receive an answer with citations. |
+| `GET` | `/api/documents` and `/api/documents/{id}` | List permitted documents and preview a source. |
+| `POST` | `/api/documents/upload` | Validate and index a document (administrator only). |
+| `GET` | `/api/connectors` | Show the configured MCP connector. |
+| `GET` | `/api/analytics` | Return usage and quality metrics (administrator only). |
+
+The [full API reference](docs/api_documentation.md) includes the remaining endpoints, access rules, request and response fields, and error codes.
+
 ## Configuration
 
 Copy `.env.example` to `.env` and set values before a shared deployment. `.env` is ignored by Git.
