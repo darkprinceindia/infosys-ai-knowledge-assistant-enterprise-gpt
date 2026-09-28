@@ -138,7 +138,7 @@ The tests use a temporary database and verify the MCP answer route, citations, r
 
 ## Submission status
 
-The repository and local demo flow are ready. A public app URL, recording, and actual team-member names still need to be added for final submission. The application is a **capstone prototype**. The full enterprise blueprint would additionally require evaluated semantic embeddings and a vector store, managed connectors, enterprise identity, document refresh and approval workflows, and deeper answer-quality monitoring. These limitations are detailed in [security notes](docs/security_notes.md) and [deployment notes](docs/deployment.md). The brief's suggested stacks are options rather than mandatory choices; this implementation uses Python's standard library and a small optional PDF package to remain easy to run.
+The repository and public review demo are ready. A recording and actual team-member names still need to be added for final submission. The application is a **capstone prototype**. The full enterprise blueprint would additionally require evaluated semantic embeddings and a vector store, managed connectors, enterprise identity, document refresh and approval workflows, and deeper answer-quality monitoring. These limitations are detailed in [security notes](docs/security_notes.md) and [deployment notes](docs/deployment.md). The brief's suggested stacks are options rather than mandatory choices; this implementation uses Python's standard library and a small optional PDF package to remain easy to run.
 
 ## Team contribution
 
