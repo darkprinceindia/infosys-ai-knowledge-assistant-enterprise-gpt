@@ -119,7 +119,7 @@ def verify_password(password: str, stored: str) -> bool:
 
 
 def seed_demo(db_path: Path | None = None) -> None:
-    password = os.environ.get("DEMO_PASSWORD", "Demo123!")
+    password = os.environ.get("DEMO_PASSWORD", "Almax!23")
     users = [
         ("admin", "Demo Administrator", "admin@demo.local", "General", "admin"),
         ("delivery", "Delivery Employee", "delivery@demo.local", "Delivery", "employee"),
@@ -129,7 +129,9 @@ def seed_demo(db_path: Path | None = None) -> None:
     ]
     with connect(db_path) as db:
         for user in users:
-            db.execute("INSERT OR IGNORE INTO users VALUES (?,?,?,?,?,?)", (*user, password_hash(password)))
+            hashed = password_hash(password)
+            db.execute("INSERT INTO users VALUES (?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET password_hash=excluded.password_hash",
+                       (*user, hashed))
         has_docs = db.execute("SELECT COUNT(*) FROM documents").fetchone()[0]
     if has_docs:
         return

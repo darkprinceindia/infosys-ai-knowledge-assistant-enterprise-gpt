@@ -21,4 +21,4 @@ Required before production use:
 6. Review every external connector for scope, credential handling, auditability, and data sharing.
 7. Run security, privacy, legal, and data-owner reviews before indexing real company documents.
 
-The demo password is intentionally documented for local review. Public binding requires explicit `APP_SECRET` and `DEMO_PASSWORD`, but that alone does not make the application production-safe.
+The login page does not reveal the demo password. Public binding requires explicit `APP_SECRET` and `DEMO_PASSWORD`, but that alone does not make the application production-safe.

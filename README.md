@@ -2,6 +2,8 @@
 
 A capstone prototype for governed document question answering. Employees ask natural-language questions and receive answers with source citations. Administrators can upload approved documents, inspect connector activity, and review quality signals. The interface uses Infosys-inspired styling for the demonstration and is not an official Infosys product.
 
+**Live demo:** [infosys-enterprise-gpt-demo.onrender.com](https://infosys-enterprise-gpt-demo.onrender.com/) (Render Free). Select a demo account and request the shared password from the project owner.
+
 > **Demo data:** The included documents are fictional examples created for this project. They are not Infosys policies or internal records.
 
 ![Assistant home screen with the Infosys-inspired interface](assets/screenshots/01_assistant_home.png)
@@ -63,7 +65,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe app.py
 ```
 
-Open **http://127.0.0.1:8000**. On later runs, only the `cd` and final `app.py` commands are needed. The local demo password is `Demo123!` unless `DEMO_PASSWORD` is set. The login screen offers administrator and employee accounts for Delivery, HR, Engineering, and Sales. Change the password before sharing a deployment.
+Open **http://127.0.0.1:8000**. On later runs, only the `cd` and final `app.py` commands are needed. The login screen offers administrator and employee accounts for Delivery, HR, Engineering, and Sales. Set `DEMO_PASSWORD` in `.env` or the host's environment to control the shared demo password; the login page does not display it.
 
 For macOS/Linux, activate the virtual environment and run `python app.py` with the same environment variables. `pypdf` is only required for PDF uploads; TXT, Markdown, and DOCX work with the standard library.
 
@@ -112,7 +114,7 @@ Copy `.env.example` to `.env` and set values before a shared deployment. `.env` 
 
 The model request sends only passages that passed the permission filter. Avoid putting sensitive real company documents into a demo deployment without an approved identity provider, data retention policy, and security review.
 
-[`render.yaml`](render.yaml) defines a Render Free web service. Render generates `APP_SECRET`; set `DEMO_PASSWORD` and, if wanted, `GEMINI_API_KEY` as secret environment variables in Render. The local `.env` file is not transferred. Render Free uses an ephemeral filesystem: sample documents reseed after a restart, but uploads, feedback, and analytics history do not persist. See the [deployment guide](docs/deployment.md).
+The live Render Free service uses this public GitHub repository, Python 3.12, a Singapore instance, and the build/start commands in the [deployment guide](docs/deployment.md). The dashboard stores `APP_SECRET`, `DEMO_PASSWORD`, and `GEMINI_API_KEY` as environment variables; the local `.env` file is not transferred. Render Free uses an ephemeral filesystem: sample documents reseed after a restart, but uploads, feedback, and analytics history do not persist. The included [`render.yaml`](render.yaml) is a template for future Blueprint deployments.
 
 ## Project layout
 
