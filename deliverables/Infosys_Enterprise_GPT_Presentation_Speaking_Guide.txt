@@ -595,4 +595,250 @@ available models, but generation returned a temporary high-demand error.
 The cited local answer path worked. Present this honestly if the live demo
 shows "Local extractive" beside an answer.
 
+==========================================================================
+FOR UNDERSTANDING: A REALISTIC HYPOTHETICAL SEVEN-PERSON TEAM PLAN
+==========================================================================
+
+This is a suggested division of work if seven people built this project from
+scratch. It is NOT a record of who actually wrote the current Git commits.
+Replace Person1 through Person7 with the real names and adjust the tasks to
+match what each person truly did before using this as a contribution claim.
+
+I have interpreted the team as three two-person data science/development
+teams (six people), plus one Web3 specialist who works across the teams:
+
+Team A - Knowledge and data science:     Person1 + Person2
+Team B - Python backend and integration: Person3 + Person4
+Team C - Web app and testing:             Person5 + Person6
+Across all teams - Web3/provenance:      Person7
+
+1. WHO COULD DO WHAT?
+
+TEAM A: KNOWLEDGE AND DATA SCIENCE
+
+Person1 - Project scope and knowledge-bank content
+- Start the project brief in README.md: the problem, who uses the app, what
+  an answer must contain, the access rules, and what counts as a good demo.
+- Write or collect the five fictional sample policies, SOPs, runbooks,
+  playbooks, and manuals under data/sample_*/. These are teaching examples,
+  not actual Infosys documents.
+- Fill data/source_metadata.csv with each file's department, classification,
+  owner, type, and dates. Check that the text and metadata agree.
+- Give Person2 realistic sample questions and expected source passages.
+  For example, the Delivery escalation SOP should answer a P1 question.
+
+Person2 - Search, RAG, and answer evaluation
+- Build the knowledge.py functions that split documents into passages,
+  create the searchable index, rank matching passages, and reject weak
+  matches. Work with Person3 on the SQLite table names and function inputs.
+- Make retrieval respect department, classification, active status, and
+  expiry. Test that a Delivery employee cannot retrieve HR-only content.
+- Implement the local sentence-based answer so the app still works when a
+  Gemini request fails. Help Person4 define the grounded Gemini prompt.
+- Maintain docs/evaluation_queries.csv and test questions: which passage
+  should be found, when the assistant should say "I do not know", and
+  whether citations point to the right document.
+
+Team A's handoff: a small, well-described collection of source documents and
+knowledge.py functions such as create_document(), search(), and
+extractive_answer(). Team B calls these functions; Team C displays results.
+
+TEAM B: PYTHON BACKEND AND INTEGRATION
+
+Person3 - Application API, accounts, and document intake
+- Build the first app.py server and agree with Person6 on the JSON shapes of
+  endpoints such as /api/login, /api/query, and /api/documents/upload.
+- Add the demo accounts, password verification, signed session cookie, and
+  administrator versus employee checks. Frontend hiding alone is not enough.
+- Build upload and source-preview endpoints. Check the administrator role
+  before indexing a document and check access again before opening a source.
+- Record questions, citations, and audit events in SQLite so later analytics
+  has data. Coordinate database changes with Person2 rather than editing the
+  same part of knowledge.py at the same time.
+
+Person4 - MCP connector and model-answer path
+- Implement mcp_server.py with the read-only
+  search_curated_knowledge tool. Connect HR questions in app.py to that tool
+  over local JSON-RPC messages. Recheck access after the tool returns.
+- Add prompts/grounded_answer.txt and connect the optional Gemini call to
+  the approved passages found by Person2's search. Ensure a local answer is
+  used if Gemini is unavailable or returns unusable citations.
+- Record MCP success, failure, returned passage count, and timing. Test both
+  an HR/MCP question and a non-HR/local-search question with Person6.
+- Explain in docs/architecture.md that the current connector searches the
+  local knowledge bank; it is not connected to a real corporate HR system.
+
+Team B's handoff: stable HTTP endpoints. For example, Person6 can send
+{question: "How do we escalate a P1 incident?", department: "All"} to
+/api/query and receive answer text, citation details, route, and timing.
+Team A supplies the search functions that make this endpoint useful.
+
+TEAM C: WEB APP AND TESTING
+
+Person5 - Page structure and visual design
+- Build static/index.html and static/style.css: login, Ask assistant,
+  Knowledge library, Connectors, Quality analytics, upload form, and source
+  preview. Make the layout understandable on a laptop and smaller screens.
+- Give Person6 clearly named form fields and element IDs so browser code can
+  read the question, file, metadata, and user actions reliably.
+- Label the interface as an Infosys-inspired capstone demonstration rather
+  than an official Infosys product. Make citations and access scope visible.
+
+Person6 - Browser behaviour, integration tests, and demo flow
+- Build static/app.js: submit login and questions, show answers and source
+  previews, convert an uploaded file to the API's JSON format, and display
+  errors. Connect the frontend to Person3's endpoints.
+- Build the Quality analytics screen from /api/analytics and the Connectors
+  screen from /api/connectors. The screens should display server data rather
+  than inventing counts in JavaScript.
+- Run tests/test_workflow.py and tests/http_smoke.py with Persons2-4. Walk
+  through administrator upload, HR and Delivery questions, permission denial,
+  feedback, and sign-out. Prepare screenshots and a clear demo sequence.
+
+Team C's handoff: a person can use the backend without typing API commands.
+Person5 makes the screens; Person6 wires those screens to the working API.
+
+PERSON7: WEB3 SPECIALIST WORKING ACROSS THE TEAMS
+
+Person7 - Provenance, security review, and demonstration deployment
+- Use a Web3 specialist's knowledge of hashes, ownership, and audit trails
+  to ask: "Where did this document come from, who added it, and can we show
+  whether it changed?" Work with Person1 on owner/source metadata and with
+  Person2/Person3 on the document checksum and audit entries in knowledge.py.
+- Review that employees cannot retrieve another department's restricted
+  content, that API keys stay on the server, and that the public repository
+  contains .env.example placeholders rather than real secrets.
+- Write or review docs/security_notes.md and docs/deployment.md, prepare
+  render.yaml, and help deploy a review version on Render. Check what is lost
+  when Render Free restarts so the team does not call it permanent storage.
+- Describe a POSSIBLE future Web3 extension: anchor a document version hash
+  in a trusted ledger if a real organization has a reason to prove when a
+  policy version existed. Keep original documents off-chain and study cost,
+  privacy, and governance before building anything like this.
+
+The present app has NO blockchain, wallet, token, smart contract, or on-chain
+document store. Its checksum is a local duplicate/integrity clue and its
+audit trail is in SQLite. Person7's realistic contribution to this version
+is provenance thinking, review, and deployment; do not present a blockchain
+feature as already working.
+
+2. HOW PERSON1 COULD START THE FIRST FILE AND SHARE IT
+
+Imagine the team has agreed to build an enterprise document question-answering
+prototype but no code exists yet. Person1 writes README.md first on their own
+computer. It says what the product should do, names the proposed screens and
+sample documents, and defines the rule "answer only from accessible sources
+and show citations." This file becomes the common plan before others code.
+
+Person1 then creates an empty GitHub repository, for example
+darkprinceindia/infosys-ai-knowledge-assistant-enterprise-gpt. They put the
+README.md in a local Git folder, commit it with a clear message such as
+"docs: define capstone scope and access rules", and push the main branch to
+that GitHub repository. This is an ILLUSTRATIVE starting story, not a claim
+about the actual first commit of the current repository.
+
+Simple command idea (after creating the empty GitHub repository):
+  git init
+  git add README.md
+  git commit -m "docs: define capstone scope and access rules"
+  git branch -M main
+  git remote add origin <GitHub repository URL>
+  git push -u origin main
+
+Person1 invites Persons2-7 as GitHub collaborators. Each accepts the invite
+and clones the repository to their own computer. They do not need a shared
+folder or a shared GitHub password. When a person works on a feature, they
+make a separate branch, commit small changes, push that branch, and open a
+pull request for a teammate to review. After a merge, everyone pulls the
+new main branch before building on it. Real API keys and passwords stay in
+local .env files or Render environment variables, never in Git commits.
+
+For example, Person5 might make a branch named feature/web-layout while
+Person2 uses feature/knowledge-search. Both can work at the same time because
+they mostly edit different files. Before merging, Person6 checks that the
+HTML element IDs match what app.js expects, and Person3 checks that app.js
+calls the actual API paths. If two people need to edit app.py or
+knowledge.py, they agree on a small interface first and merge one pull
+request before rebasing the other. This reduces merge conflicts.
+
+3. A REALISTIC ORDER TO BUILD THE PROJECT FROM SCRATCH
+
+Step 1 - Agree on the contract. All seven agree on the demo questions,
+account roles, document metadata, main screens, and JSON responses. For an
+answer, they agree on fields such as answer, citations, route, no_answer,
+model, and latency_ms. This gives each team a target.
+
+Step 2 - Create the starting knowledge. Person1 writes sample documents and
+metadata. Person2 sets up SQLite documents/chunks and the first search
+function. Person7 checks the proposed ownership and audit fields.
+
+Step 3 - Make one plain question work. Person3 makes /api/query call
+Person2's search. Person5 makes a simple question form. Person6 makes its
+submit button send JSON and render the result. At this point, the team can
+already ask a Delivery question and see a citation, even before the rest of
+the pages are polished.
+
+Step 4 - Add controls and extra paths. Person3 adds login and document
+upload. Person2 adds classification and expiry filtering. Person4 adds the
+MCP route and optional Gemini answer. Person7 checks secrets and access
+boundaries. Person6 connects the new screens and error messages.
+
+Step 5 - Test together. A Delivery user asks an HR question and must not
+see an HR citation. An administrator uploads a sample file and then asks a
+question about it. A missing topic must produce a no-answer response.
+Person6 records any UI defects; Persons2-4 fix data or backend defects.
+
+Step 6 - Present and deploy. Person5 finishes the visual design. Person6
+captures screenshots and rehearses the walkthrough. Person7 helps configure
+the free Render demo. The group checks the public URL, login, citations,
+document permissions, and analytics together.
+
+4. HOW THE SEVEN CONTRIBUTIONS MEET IN A SINGLE QUESTION
+
+Take "What is the annual leave request process?" as a team example:
+- Person1 supplied the fictional Employee leave policy and its HR metadata.
+- Person2 made that text searchable and filtered it by classification.
+- Person3 receives the logged-in request in app.py and controls the session.
+- Person4's MCP route calls the read-only search tool for this HR question.
+- Person5 made the question box, answer card, and citation design.
+- Person6 made the click send the request and show the returned source.
+- Person7 checked the ownership, audit, and permission story and helped put
+  the review version online.
+
+The browser does not know who wrote each component. It only knows that the
+files agree on the same data contract. The backend's answer JSON connects
+the search work to the visual work.
+
+5. HOW THE SEVEN CONTRIBUTIONS MEET IN ONE UPLOAD
+
+Suppose the administrator uploads an Equipment request guide:
+- Person5's form collects the file and its title, department, owner, and
+  access classification.
+- Person6's app.js sends the file and fields to /api/documents/upload.
+- Person3's app.py checks the administrator session and accepts the request.
+- Person2's knowledge.py extracts, checks, splits, and indexes the text.
+- Person1 checks that the guide's sample wording and metadata make sense.
+- Person7 reviews checksum, source ownership, and audit event requirements.
+- Person4's answer path can use the new passage in later questions; it does
+  not need a separate import into the MCP connector because MCP searches the
+  same SQLite bank.
+
+This is why each person's contribution matters. A nice form without an API
+cannot save a document. A good search function without a source document
+has nothing to find. An answer without citations cannot be checked. A demo
+without permissions or a reviewable audit path would misrepresent the
+enterprise problem the team set out to solve.
+
+6. A SHORT, HONEST TEAM EXPLANATION FOR A PRESENTATION
+
+"For planning purposes, we divided seven roles into three pairs plus one
+specialist. The knowledge pair prepared sample documents and retrieval. The
+backend pair built the API, login, MCP path, and answer routing. The web pair
+built the screens, browser-to-server calls, and tests. A Web3 specialist
+reviewed document provenance, checksums, auditability, and deployment, while
+keeping blockchain ideas as future work. One person began with a README in a
+GitHub repository; each teammate developed a branch, reviewed pull requests,
+and integrated through agreed API and database contracts. Together, those
+pieces form one working knowledge assistant."
+
 END OF SPEAKING GUIDE
